@@ -4,7 +4,7 @@
 // @description webMud Script - http://www.webmud.com
 // @version      0.1
 // @author       Kap
-// @match        http://www.webmud.com/Characters/Game*
+// @match        http://www.webmud.com/Characters/*
 // @grant       none
 // ==/UserScript==
 
@@ -14,10 +14,21 @@
 // props to Cabal who gave me my first script ever in qmodem pro
 //
 
+//#TODO add spell support
+// 12/19 10:39:05 AM from Force
+// - {caster} raises a hand and utters a harsh word.
+// - Ethereal daggers speed forth and shred {target} for {value} damage!
+// - You cast heal major wounds on {target}, healing {value} damage!
+// - {caster} casts cause harm on {target} for {value} damage!
+
 //#TODO init command to check st to get max health and mana
+
+//#TODO setup profiles so health is different per character
 
 //#TODO pathing system to move through a list of directions separated by commas
 // - option to reverse in real time to back-out
+
+//#TODO POC for a database - mongo? stored remotely?
 
 //#TODO move() should display the direction command being used, not hide it. use sendMessageText.
 // - this function will clear the #message input box, so we should make sure values that were there are replaced after executing
@@ -25,8 +36,14 @@
 //#TODO sendMessageText() may need to be overridden or extended to allow it to smartly save and then replace what was in #message if its being executed from a script and not a person
 
 //#TODO numpad to send direction commands
+//#TODO detect a realm update and refresh the page. possibly wait for dom update to not come back for 2 minutes and then refresh
 
+//#TODO setup aliases for common commands like wea = eq, bu = buy, use = read, sp = spells
+
+//#TODO fix focus in message box whenever window is activated
     var AUTO = false;
+
+	console.log = function() {} // disables logging
 
     var settings = {
         health_rest: 0.90
@@ -36,7 +53,7 @@
 
     var character = {
         base: {
-            health: 27
+            health: 48
             ,   mana: 3
         },
         current: {
@@ -87,21 +104,6 @@
 
     }
 
-
-    // add interface with checkbox
-    //$('#divMainPanel div:first').width('50%');
-    $('<input type="checkbox" id="chkEnableKapScript"></input><label for="chkEnableKapScript">KapScript</label>').insertBefore('#chkEnableAI');
-    if($('#chkEnableKapScript').checked) {
-        initkap();
-    }
-    $('#chkEnableKapScript').change(function() {
-       if ($(this).is(':checked')) {
-          initkap();
-       } else {
-          deinitkap();
-       }
-    });
-
 	window.move = move;
 	function move(direction) {
 		sendMessageText(direction);
@@ -115,11 +117,12 @@
             //console.log(loc.room.name);
 
             //sendMessageDirect('u');
+            sendMessageDirect('break');
             move('u');
 
             //loc.room = loc.room.exits.u;
             //console.log(loc.room.name);
-            sendMessageDirect('rest');
+            sendMessageText('rest');
         }
     }
     window.go = go;
@@ -127,6 +130,35 @@
         didrun = false;
         move('d');
     }
+
+
+	// OBSERVERS
+    // add interface with checkbox
+    //$('#divMainPanel div:first').width('50%');
+    $('<input type="checkbox" id="chkEnableKapScript"></input><label for="chkEnableKapScript">KapScript</label><br>').insertBefore('#chkEnableAI');
+    if($('#chkEnableKapScript').checked) {
+        initkap();
+    }
+    $('#chkEnableKapScript').change(function() {
+       if ($(this).is(':checked')) {
+          initkap();
+       } else {
+          deinitkap();
+       }
+    });
+	$(window).focus(function() {
+		$('#message').focus();
+	});
+
+	// puts cursor in the message box whenever main mud black screen area is clicked
+	$('#mainScreen').click(function() {
+		$('#message').focus();
+	});
+
+	// puts cursor in the gossip box whenever main conversation screen area is clicked
+	$('#divConversations').click(function() {
+		$('#txtCommand').focus();
+	});
 
     ///////
 
