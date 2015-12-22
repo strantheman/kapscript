@@ -102,7 +102,7 @@ function checkOld() {
 
 function addMessage(message, hexColor, crlf, removeLastPrompt) {
     if (message != null && message != '') {
-        
+
         // Add the message to the page.
         $('#mainScreen').append('<span style="color:' + hexColor + '" class="hour">' + message + '</span>');
     }
@@ -115,7 +115,7 @@ function addMessage(message, hexColor, crlf, removeLastPrompt) {
 
 function addMessageRaw(message, crlf, removeLastPrompt) {
     if (message != null && message != '') {
-        
+
         // Add the message to the page.
         $('#mainScreen').append(message);
     }
@@ -127,10 +127,10 @@ function addMessageRaw(message, crlf, removeLastPrompt) {
 }
 
 function sendMessage() {
-    
+
     // Call the Send method on the hub.
     var textToSend = $('#message').val();
-    
+
     addMessage(textToSend, cga_light_grayHex, true, false);
     sendMessageDirect(textToSend);
     // Clear text box and reset focus for next comment.
@@ -155,7 +155,7 @@ function colorToHex(color) {
             return cga_blackHex;
         case 15: //$cga_white
             return cga_whiteHex;
-        case 7: //$cga_light_gray: 
+        case 7: //$cga_light_gray:
             return cga_light_grayHex;
         case 8: //$cga_dark_gray
             return cga_dark_grayHex;
@@ -190,7 +190,7 @@ function colorToHex(color) {
 
 function fromExitDirectionName(exitDirectionID) {
     switch (exitDirectionID) {
-        case 0: 
+        case 0:
             return "the north";
         case 1:
             return "the south";
@@ -307,7 +307,7 @@ function buildFormattedSpan(color, text, desiredLength, leftAligned) {
     var hourString = "hour" + String(curDate.getHours());
     var formattedText = "<span class=\"" + hourString + "\" style=\"color:" + color + "\">";
     var padding = "";
-   
+
     for (var i = 0; i < numSpaces; i++) {
         padding += "&nbsp;"
     }
@@ -346,6 +346,9 @@ function startConnection() {
                 $('#mainDisplay').show();
                 openConversationsWindow();
                 refreshPlayerList();
+                if (result.AIEnabled == true) {
+                    $('#chkEnableAI').prop('checked', true);
+                }
             } else {
                 if (result.InfoMessage != null) {
                     alert(result.InfoMessage);
@@ -366,7 +369,7 @@ function connect(playerID) {
     //$.connection.hub.disconnected(function () {
     //    waitAndReconnect();
     //});
-    
+
     startConnection();
 }
 
@@ -407,7 +410,7 @@ function openConversationsWindow() {
 
 function refreshPlayerList() {
     hub.server.getPlayersInRealm().done(function (result) {
-            
+
         var items = [];
         $.each(result, function (id, name) {
             items.push('<li class="list-group-item">' + name + '</li>');
@@ -439,7 +442,7 @@ function showPrompt(removeOldPrompt) {
     } else {
         statline += buildSpan(cga_dark_cyan, "](Resting):")
     }
-    
+
     if ($lastPrompt && removeOldPrompt && removeOldPrompt == true) {
         $lastPrompt.remove();
     }
@@ -555,14 +558,14 @@ function showRoom(actionData) {
         }
     }
     if (actionData.VisibleItems && actionData.VisibleItems.length > 0) {
-        
+
         for (var i = 0; i < actionData.VisibleItems.length; i++) {
             if (items != "") {
                 items += ", ";
             }
             items += fixStackName(actionData.VisibleItems[i].Count, actionData.VisibleItems[i].Name);
         }
-        
+
     }
     if (items != "") {
         var youNoticeText = "You notice " + items + " here.";
@@ -632,7 +635,7 @@ function entersTheRoom(actionData) {
         enterText += buildSpan(cga_dark_green, " " + actionData.EntranceMessage.replace("{exitDirection}", fromExitDirectionName(actionData.FromDirection))) + "<br>";
     }
     addMessageRaw(enterText, false, true);
-    
+
 }
 
 function runsIntoWall(actionData) {
@@ -648,7 +651,7 @@ function leavesTheRoom(actionData) {
         enterText = buildSpan(cga_yellowHex, actionData.LeavingFigureName);
         enterText += buildSpan(cga_dark_green, " " + actionData.LeavingMessage.replace("{exitDirection}", toExitDirectionName(actionData.LeavingDirection))) + "<br>";
     }
-    
+
     addMessageRaw(enterText, false, true);
 }
 
@@ -750,6 +753,9 @@ function stat(actionData) {
     text += buildSpan(cga_dark_green, "Strength:") + "&nbsp;&nbsp;" + buildFormattedSpan(cga_dark_cyan, String(actionData.Strength), 9, true) + buildSpan(cga_dark_green, "Agility: ") + buildFormattedSpan(cga_dark_cyan, String(actionData.Agility), 14, true) + buildSpan(cga_dark_green, "Tracking:") + buildFormattedSpan(cga_dark_cyan, String(actionData.Tracking), 9, false) + "<br>";
     text += buildSpan(cga_dark_green, "Intellect: ") + buildFormattedSpan(cga_dark_cyan, String(actionData.Intellect), 9, true) + buildSpan(cga_dark_green, "Health:") + "&nbsp;&nbsp;" + buildFormattedSpan(cga_dark_cyan, String(actionData.Health), 14, true) + buildSpan(cga_dark_green, "Martial Arts:") + buildFormattedSpan(cga_dark_cyan, String(actionData.MartialArts), 5, false) + "<br>";
     text += buildSpan(cga_dark_green, "Willpower: ") + buildFormattedSpan(cga_dark_cyan, String(actionData.Willpower), 9, true) + buildSpan(cga_dark_green, "Charm:") + "&nbsp;&nbsp;&nbsp;" + buildFormattedSpan(cga_dark_cyan, String(actionData.Charm), 14, true) + buildSpan(cga_dark_green, "MagicRes:") + buildFormattedSpan(cga_dark_cyan, String(actionData.MagicRes), 9, false) + "<br>";
+    for (var i = 0; i < actionData.ActiveSpellDescriptions.length; i++) {
+        text += buildSpan(cga_light_grayHex, actionData.ActiveSpellDescriptions[i]) + '<br>';
+    }
     addMessageRaw(text, false, true);
 }
 
@@ -810,7 +816,7 @@ function inventory(actionData) {
     if (first == true) {
         carryingText += "nothing";
     }
-    
+
     var keyText = "You have ";
     if (actionData.KeyInventory && actionData.KeyInventory.Length > 0) {
         keyText += "the following keys: ";
@@ -889,7 +895,7 @@ function get(actionData) {
             addMessageRaw(text, false, true);
             return;
         } else {
-            var text = beMoreSpecificList(actionData.PossibleItemTypes); 
+            var text = beMoreSpecificList(actionData.PossibleItemTypes);
             addMessageRaw(text, false, true);
         }
     }
@@ -906,7 +912,7 @@ function drop(actionData) {
                 addMessageRaw(text, false, true);
             }
         } else {
-            //var text = 
+            //var text =
             if (actionData.TargetType == 0) {
                 var text = buildSpan(cga_light_grayHex, actionData.PlayerName + " drops " + actionData.Name + ".") + "<br>";
                 addMessageRaw(text, false, true);
@@ -1015,6 +1021,95 @@ function breakCombat(actionData) {
     }
 }
 
+function combatSwing(actionData) {
+    var text = "";
+    var attackerName;
+    var verbNumber;
+    if (actionData.AttackerID != playerID) {
+        if (actionData.AttackerTypeID == 0) {
+            attackerName = actionData.AttackerName;
+        } else {
+            attackerName = "The " + actionData.AttackerName
+        }
+        isOrAre = ""
+        verbNumber = 1;
+    } else {
+        attackerName = "You";
+        verbNumber = 0;
+    }
+    var targetName;
+    if (actionData.TargetID != playerID) {
+        targetName = actionData.TargetName;
+    } else {
+        targetName = "you";
+    }
+    switch (actionData.SwingResult) {
+        case 1: //hit
+        case 2: //crit
+            text += buildSpan(cga_light_red, attackerName + " " + (actionData.SwingResult == 2 ? "critically " : "") + actionData.Verbs[verbNumber] + " " + targetName + " for " + String(actionData.Damage) + "!") + "<br>";
+            break;
+        case 0: //miss
+            text += buildSpan(cga_dark_cyan, attackerName + " " + actionData.Verbs[verbNumber] + " at " + targetName + "!") + "<br>";
+            break;
+        case 3: //dodge
+            var dodgeText;
+            if (targetName == "you") {
+                dodgeText = "you dodge";
+            } else {
+                dodgeText = "they dodge";
+            }
+            text += buildSpan(cga_dark_cyan, attackerName + " " + actionData.Verbs[verbNumber] + " at " + targetName + ", but " + dodgeText + " out of the way!") + "<br>";
+            break;
+        case 4: //glance
+            text += buildSpan(cga_light_red, attackerName + " " + actionData.Verbs[verbNumber] + " " + targetName + ", but the swing glances off!") + "<br>";
+            break;
+    }
+    addMessageRaw(text, false, true);
+}
+
+function dropsToGround(actionData) {
+    var text = '';
+    var dropText = (actionData.PlayerID != playerID ? "drops" : "drop");
+    text += buildSpan(cga_light_red, capitalizeFirstLetter(actionData.PlayerName) + " " + dropText + " to the ground!") + "<br>";
+    addMessageRaw(text, false, true);
+}
+
+function death(actionData) {
+    var text = '';
+    if (actionData.RIPFigureType == 1) {
+        text += buildSpan(cga_light_grayHex, actionData.DeathMessage) + "<br>";
+    } else {
+        var targetName;
+        if (actionData.PlayerID != playerID) {
+            targetName = actionData.PlayerName;
+        } else {
+            targetName = "you";
+        }
+        var isOrAreText = (actionData.PlayerID != playerID ? "is" : "are");
+        text += buildSpan(cga_light_red, capitalizeFirstLetter(targetName) + " " + isOrAreText + " dead!") + '<br>';
+        if (action.Data.PlayerID == playerID) {
+            text += buildSpan(cga_light_grayHex, 'You have ' + String(actionData.LivesLeft) + ' lives remaining.') + '<br>'
+        }
+    }
+    addMessageRaw(text, false, true);
+}
+
+function rerolled(actionData) {
+    $.connection.hub.stop();
+}
+
+function mobDropMoney(actionData) {
+    var text = '';
+    for (var k = 0; k < actionData.DroppedCoinRolls.length; k++) {
+        text += buildSpan(cga_light_grayHex, String(actionData.DroppedCoinRolls[k].NumberCoins) + " " + (actionData.DroppedCoinRolls[k].NumberCoins > 1 ? pluralCoinName(actionData.DroppedCoinRolls[k].CoinTypeID) + " drop" : singleCoinName(actionData.DroppedCoinRolls[k].CoinTypeID) + " drops") + " to the ground.") + "<br>";
+    }
+    addMessageRaw(text, false, true);
+}
+
+function gainExperience(actionData) {
+    addMessageRaw(buildSpan(cga_light_grayHex, "You gain " + String(actionData.Experience) + " experience.") + "<br>", false, true);
+}
+
 function combatRound(actionData) {
     var text = "";
     var attackerName;
@@ -1091,7 +1186,7 @@ function combatRound(actionData) {
                 text += buildSpan(cga_light_red, attackerName + " " + actionData.SwingInfos[i].Verbs[verbNumber] + " " + targetName + ", but the swing glances off!") + "<br>";
                 break;
             case 5: //spell
-                
+
                 break;
         }
     }
@@ -1152,10 +1247,24 @@ function listCommand(actionData) {
     var text = buildSpan(cga_light_grayHex, "The following items are for sale here:") + "<br><br>";
     text += buildFormattedSpan(cga_dark_green, "Item", 30, true) + buildFormattedSpan(cga_dark_cyan, "Quantity", 12, true) + buildSpan(cga_dark_cyan, "Price") + "<br>";
     text += buildSpan(cga_dark_cyan, "------------------------------------------------------") + "<br>";
-
+    var canUseStatus = '';
     if (actionData.ItemsForSale && actionData.ItemsForSale.length > 0) {
+
         for (var i = 0; i < actionData.ItemsForSale.length; i++) {
-            text += buildFormattedSpan(cga_dark_green, actionData.ItemsForSale[i].ItemTypeName + " ", 30, true) + buildFormattedSpan(cga_dark_cyan, String(actionData.ItemsForSale[i].Count) + " ", 5, true) + buildFormattedSpan(cga_dark_cyan, String(actionData.ItemsForSale[i].Price) + " ", 10, false) + buildSpan(cga_dark_cyan, "copper farthings") + "<br>";
+            switch (actionData.ItemsForSale[i].CanUseStatus) {
+                case 2: //can't use
+                    canUseStatus = ' (You can\'t use)';
+                    break;
+                case 3: //too powerful
+                    canUseStatus = ' (Too powerful)';
+                    break;
+                default:
+                case 1: //can use
+                    canUseStatus = '';
+                    break;
+
+            }
+            text += buildFormattedSpan(cga_dark_green, actionData.ItemsForSale[i].ItemTypeName + " ", 30, true) + buildFormattedSpan(cga_dark_cyan, String(actionData.ItemsForSale[i].Count) + " ", 5, true) + buildFormattedSpan(cga_dark_cyan, String(actionData.ItemsForSale[i].Price) + " ", 10, false) + buildSpan(cga_dark_cyan, "copper farthings" + canUseStatus) + "<br>";
         }
     }
     addMessageRaw(text, false, true);
@@ -1340,7 +1449,7 @@ function checkStat(statName) {
     var newValue = Number($('#' + newID).val());
     var minValue = Number($('#' + minID).val());
     var maxValue = Number($('#' + maxID).val());
-    
+
     if (newValue < oldValue || newValue < minValue) {
         $('#' + warningID).text('Cannot decrease that low');
         $('#' + warningID).toggle(true);
@@ -1778,6 +1887,10 @@ function castSpell(actionData) {
     }
 }
 
+function spellWearsOff(actionData) {
+    addMessageRaw(buildSpan(cga_light_grayHex, 'The effects of ' + actionData.SpellName + ' wear off.') + '<br>', false, true);
+}
+
 function start(hubUrl) {
     $(document).keypress(function (e) {
         if (e.which == 13) {
@@ -1939,6 +2052,27 @@ function start(hubUrl) {
                 case 47: //castSpell
                     castSpell(action.ActionData);
                     break;
+                case 48:
+                    combatSwing(action.ActionData);
+                    break;
+                case 49:
+                    dropsToGround(action.ActionData);
+                    break;
+                case 50:
+                    death(action.ActionData);
+                    break;
+                case 51:
+                    mobDropMoney(action.ActionData);
+                    break;
+                case 52:
+                    gainExperience(action.ActionData);
+                    break;
+                case 53:
+                    rerolled(action.ActionData);
+                    break;
+                case 54:
+                    spellWearsOff(action.ActionData);
+                    break;
                 default: //unknown action
                     addMessage("Unknown action: " + action.Action, cga_whiteHex, true);
                     break;
@@ -1957,8 +2091,8 @@ function start(hubUrl) {
         });
     };
     hub.client.refreshPlayerList = refreshPlayerList;
-        
-    
+
+
     $('#sendmessage').click(function () {
         sendMessage();
     });
@@ -1998,5 +2132,13 @@ function start(hubUrl) {
 
     // Set initial focus to message input box.
     $('#message').focus();
-     
+
+}
+
+function enableAI() {
+    sendMessageDirect("EnableAI");
+}
+
+function disableAI() {
+    sendMessageDirect("DisableAI");
 }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        KapScript v0.1
-// @namespace   https://github.com/strantheman/kapscript
-// @description webMud Script - http://www.webmud.com
+// @namespace   KAPSCRIPT
+// @description webMud Script - http://www.webmud.com - https://github.com/strantheman/kapscript
 // @version      0.1
 // @author       Kap
 // @match        http://www.webmud.com/Characters/*
@@ -22,11 +22,13 @@
 // - {caster} casts cause harm on {target} for {value} damage!
 
 //#TODO init command to check st to get max health and mana
+// TEST: script should never think its base health or base mana is -999
 
-//#TODO setup profiles so health is different per character
+//#TODO setup profiles so rest/run settings are different per character
 
 //#TODO pathing system to move through a list of directions separated by commas
 // - option to reverse in real time to back-out
+// - http://forums.webmud.com/thread/deepwood-maps/
 
 //#TODO POC for a database - mongo? stored remotely?
 
@@ -38,42 +40,132 @@
 //#TODO numpad to send direction commands
 //#TODO detect a realm update and refresh the page. possibly wait for dom update to not come back for 2 minutes and then refresh
 
+//#TODO check room (send return) every 4 seconds
+
 //#TODO setup aliases for common commands like wea = eq, bu = buy, use = read, sp = spells
 
 //#TODO fix focus in message box whenever window is activated
+
+//#TODO respond to a telepath from a 'friend' - /kap kapscript version - reseponse: /you KapScript v0.1
+//var KAPSCRIPT = KAPSCRIPT || {};
+
+//#TODO handle death = -15
+
+(function($) {
+
+
     var AUTO = false;
 
 	console.log = function() {} // disables logging
-
     var settings = {
         health_rest: 0.90
-        ,  health_run: 0.69
+        ,  health_run: 0.49
     };
     var s = settings;
 
     var character = {
         base: {
-            health: 48
-            ,   mana: 3
+            health: maxHP
+            ,   mana: maxMA
         },
         current: {
             health: curHP
             ,   mana: curMA
         },
         get health_percent() {
-            return c.current.health/this.base.health;
-        }
+            return round(c.current.health/this.base.health,2);
+        },
+        get mana_percent() {
+            return round(c.current.mana/this.base.mana,2);
+        },
+        combat: {
+			command: 'attack'
+			,	engage: ''
+			,	round: 'You hit %mob for %dmg!' //#ff5555
+			,	miss: 'You swing at kobold thief!' //#00aaaa
+		},
+		spell: {
+			command: 'vtho'
+			,	engage: 'You move to cast volley of thorns upon mud slime!' //996600
+			,	round: 'You launch a volley of thorns at giant rat for 9 damage!' //#ff5555
+			,	miss: 'You attempt to cast volley of thorns, but fail.' //#00aaaa
+			,	mana: -1
+		}
     };
     var c = character;
 
-	window.h = setCurrentHealth;
-    function setCurrentHealth() {
-        c.current.health = curHP;
-        console.log('Max HP:' + c.base.health + ' Max MP:' + c.base.mana);
-        console.log(c.current.health + ' ' + c.health_percent*100 + '%');
-    }
-    function setStats() {
+	// when combat starts with (AI), if i have enough mana to cast spell once, cast on active mob
 
+
+	var model = {
+		actionData: {
+			Result: 1
+			,	TargetID: 'unique'
+			,	TargetName: 'mud slime'
+		}
+	};
+
+	// COMBAT OVERRIDE
+	var wm_attack = window.attack;
+	window.attack = function(actionData) {
+		console.log(actionData);
+		sendMessageText(c.spell.command + ' ' + actionData.TargetName);
+		wm_attack(actionData);
+	/*
+		if (actionData.Result == -1) {
+			commandHadNoEffect();
+			return;
+		}
+		if (actionData.Result == -2) {
+			var text = buildSpan(cga_light_red, "PvP is disabled in this realm.") + "<br>";
+			addMessageRaw(text, false, true);
+			return;
+		}
+		console.log('Kaps combat now!');
+		var text = buildSpan(cga_dark_yellowHex, "*Combat Engaged**Kap**") + "<br>";
+		//todo: show current target somewhere on screen
+		addMessageRaw(text, false, true);
+		*/
+	}
+
+/*
+#00aaaa
+You hit kobold thief for 6!,
+
+<span class="hour" style="color:#aaaaaa">vtho slime</span>
+<br>
+<span class="hour23" style="color:#996600">You move to cast volley of thorns upon mud slime!</span>
+<br>
+<span class="hour23" style="color:#996600">*Combat Engaged*</span>
+<br>
+<span class="hour23" style="color:#00aaaa">You attempt to cast volley of thorns, but fail.</span>
+<br>
+<span style="color:#ff5555" class="hour0">You launch a volley of thorns at giant rat for 9 damage!</span>
+<br>
+<span class="hour23" style="color:#aaaaaa">The mud slime melts into a puddle of goo.</span>
+<br>
+<span class="hour23" style="color:#aaaaaa">1 copper farthing drops to the ground.</span>
+<br>
+<span class="hour23" style="color:#aaaaaa">You gain 6 experience.</span>
+<br>
+<span class="hour23" style="color:#996600">*Combat Off*</span>
+<br>
+*/
+
+	window.setCurrentHealthAndMana = function() {
+        c.current.health = curHP;
+        c.current.mana = curMA;
+        //return 'Cur HP:' + c.current.health + ' Cur MP:' + c.current.mana + '\nHP %:' + c.health_percent + ' MP %:' + c.mana_percent;
+        return c.current;
+    }
+
+    window.setStats = function() {
+        while(c.base.health <= 0) { // depends on WebMUD.js values being established and for some reason these are sometimes null when first called. while loop doesnt appear to take any longer so it must be a matter of ms
+			c.base.health = maxHP;
+			c.base.mana = maxMA;
+		}
+		//return 'Max HP:' + c.base.health + ' Max MP:' + c.base.mana;
+		return c.base;
 		/*
 		function updateHPMA(actionData) {
 			maxHP = actionData.MaxHP;
@@ -87,15 +179,22 @@
 		*/
 	}
 
-    function initkap() {
+    function initkap() { //run once when script enabled
         AUTO = true;
         token = $('#connectionToken').val();
         console.log('KapScript Initialized. Token: ' + token);
         if(token !== '') { sendMessageDirect('st'); }
 
         // additional startup functions here
-        setCurrentHealth();
-        console.log('Init health: ' + c.current.health);
+        console.log('######### initkap #########');
+
+		result = setStats();
+		//console.log('Max HP:' + result.health + ' Max MP:' + result.mana);
+
+        result = setCurrentHealthAndMana();
+        //console.log(result);
+
+
     }
     function deinitkap() {
         AUTO = false;
@@ -104,10 +203,40 @@
 
     }
 
+	// ACTIONS
+	/*
+	function addMessageRaw(message, crlf, removeLastPrompt) {
+		if (message != null && message != '') {
+
+			// Add the message to the page.
+			$('#mainScreen').append(message);
+		}
+		if (crlf == true) {
+			$('#mainScreen').append("<br/>");
+		}
+		showPrompt(removeLastPrompt);
+		checkOld();
+	}
+
 	window.move = move;
 	function move(direction) {
 		sendMessageText(direction);
 	}
+
+function combatOff() {
+    var text = buildSpan(cga_dark_yellowHex, "*Combat Off*") + "<br>";
+    addMessageRaw(text, false, true);
+}
+
+function breakCombat(actionData) {
+    if (actionData.BreakFigureID == playerID) {
+        combatOff();
+    } else {
+        var text = buildSpan(cga_dark_yellowHex, actionData.BreakFigureName + " breaks off combat.") + "<br>";
+        addMessageRaw(text, false, true);
+    }
+}
+	*/
 
     var didrun = false;
     window.run = run;
@@ -118,6 +247,7 @@
 
             //sendMessageDirect('u');
             sendMessageDirect('break');
+            //move('w');
             move('u');
 
             //loc.room = loc.room.exits.u;
@@ -129,13 +259,18 @@
     function go() {
         didrun = false;
         move('d');
+        //move('e');
+
     }
 
 
 	// OBSERVERS
     // add interface with checkbox
     //$('#divMainPanel div:first').width('50%');
-    $('<input type="checkbox" id="chkEnableKapScript"></input><label for="chkEnableKapScript">KapScript</label><br>').insertBefore('#chkEnableAI');
+ 	$('\
+    	<input type="checkbox" id="chkEnableKapScript"></input><label for="chkEnableKapScript">KapScript</label>\
+    	<br>\
+    ').insertBefore('#chkEnableAI');
     if($('#chkEnableKapScript').checked) {
         initkap();
     }
@@ -146,9 +281,6 @@
           deinitkap();
        }
     });
-	$(window).focus(function() {
-		$('#message').focus();
-	});
 
 	// puts cursor in the message box whenever main mud black screen area is clicked
 	$('#mainScreen').click(function() {
@@ -159,7 +291,9 @@
 	$('#divConversations').click(function() {
 		$('#txtCommand').focus();
 	});
-
+	function round(value, decimals) { //http://www.jacklmoore.com/notes/rounding-in-javascript/
+		return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+	}
     ///////
 
 
@@ -190,9 +324,10 @@
         }
     })();
 
-    observeDOM(document.getElementById('mainScreen'), function() {
+    observeDOM(document.getElementById('mainScreen'), function() { // run every time the game sends data - DOM change
         if (AUTO) {
-            setCurrentHealth();
+            combat();
+            setCurrentHealthAndMana();
             //console.log(didrun + ' health_percent:' + c.health_percent + ' health_rest:' + s.health_rest + ' health_run:' + s.health_run);
             if (didrun == true && c.health_percent >= s.health_rest) {
                 go();
@@ -201,7 +336,7 @@
             }
         }
     });
-
+})(jQuery);
 
 
 //("DisableAI");
@@ -234,62 +369,7 @@ var location = {
     }
 };
 var loc = location;
-
-room = loc.room;
-console.log(room.name);
-
-
-
-
-
-
-function checkHealth() {
-    console.log('h ' + c.health_percent);
-    if(c.health_percent < s.health_run) {
-        //move.s();
-        //send('u');
-        run();
-
-
-    }
-}
-
-
-
-
-
-function waitForJQuery() {
-    if(!window['jQuery']) {
-        setTimeout(waitForJQuery, 500);
-    }
-    else {
-        //main(); // run something now that the doc is loaded
-
-        sendMessageDirect("-");
-
-    }
-}
-
-window.addEventListener('load', waitForJQuery);
 */
-
-/*
-var o = {
-  a: 7,
-  get b() {
-    return this.a + 1;
-  },
-  set c(x) {
-    this.a = x / 2
-  }
-};
-
-console.log(o.a); // 7
-console.log(o.b); // 8
-o.c = 50;
-console.log(o.a); // 25
-*/
-
 
 /*
 $("#message").bind("keydown", function() {
