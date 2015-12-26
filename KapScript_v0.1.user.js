@@ -284,7 +284,7 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 			,	round: 'You launch a volley of thorns at giant rat for 9 damage!' //#ff5555
 			,	miss: 'You attempt to cast volley of thorns, but fail.' //#00aaaa
 			,	mana: 1
-		},
+		}
 		/*
 		get mana_check() {
 			allowCasting = true;
@@ -518,7 +518,7 @@ function breakCombat(actionData) {
 		//$('#kapNav .section').last().append( $('#chkEnableAI') ).append('<label for="chkEnableAI">Enable AI</label>');
 		$('#enableAIContainer').append( $('#chkEnableAI') ).append(' <label for="chkEnableAI">Enable AI</label>');
 
-		vein.inject('.mainScreenWide',{'width':'1170px !important','padding':'6px !important','margin':'0 0 6px 0 !important'});
+		vein.inject('.mainScreenWide',{'width':'1170px !important','height':'500px !important','padding':'6px !important','margin':'0 0 6px 0 !important'});
 		$('#mainScreen').addClass('mainScreenWide');
 
 		// hide the rest of the remaining original UI. do not remove this from DOM as there can be important hidden input elements that live there
