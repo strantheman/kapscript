@@ -17,21 +17,25 @@ $('#btnRunKapScriptTests').click(function() {
 	console.log('######### Begin Tests #####');
 
 	// could run these all as a Dwarf Cleric and assume what the HP and MP values will be in order to setup a static test
-	testSetStats.exe();
+	//testSetStats.exe();
 	testSetCurrentHealthAndMana.exe();
 	testSpellIsSet.exe();
 	testManaCheckSpellCost.exe();
 	testManaCheckManaAttack.exe();
 
 	console.log('######### End Tests #######');
+	console.log(Test.observers[0]);
+	Test.observers[0].whoami();
 
 });
+
 
 ////////
 var Test = {
 	init: function(caller) {
-		//console.log('init ' + caller); // temporary for testing
 		success = false;
+		//this.observers.push(caller);
+
 	},
 	deinit: function(caller) {
 	},
@@ -43,14 +47,25 @@ var Test = {
 		} else {
 			//console.log('condition pass');
 		}
-	}
+	},
+	register: function(observer) {
+		this.observers.push(observer);
+	},
+	exe: function() {},
+	whoami: function(caller) {
+		console.log('I am: ' + caller);
+	},
+	observers: []
 
 };
 
 ////////
 var testSetStats = Object.create(Test);
+testSetStats.register(this);
 testSetStats.exe = function() {
-	this.init();
+	this.whoami('testSetStats');
+	 this.init();
+	console.log('testSetStats');
 	result = window.setStats();
 	//result.health = -1;/////////////////////////////////////////////////////////////////
 	this.assert(result.health > 0,"Base health should be greater than 0");
@@ -101,7 +116,7 @@ testManaCheckManaAttack.exe = function() {
 	s = getSettings();
 
 	c.current.mana = 10;
-	c.spell.mana = 1; //11 should fail and 10 should pass
+	c.spell.mana = 10; //11 should fail and 10 should pass
 	s.mana_attack = 9; //10 should fail 9 should pass
 	result = window.mana_check();
 	this.assert(result == true,"Character should not be able to cast if mana is less than the mana_attack setting");
