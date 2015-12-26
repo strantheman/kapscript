@@ -19,7 +19,6 @@ $('#btnRunKapScriptTests').click(function() {
 	// could run these all as a Dwarf Cleric and assume what the HP and MP values will be in order to setup a static test
 	testSetStats.exe();
 	testSetCurrentHealthAndMana.exe();
-	testManaCheck.exe();
 	testSpellIsSet.exe();
 	testManaCheckSpellCost.exe();
 	testManaCheckManaAttack.exe();
@@ -68,10 +67,10 @@ testSetCurrentHealthAndMana.exe = function() {
 
 // mana check should make sure you have enough mana to cast the spell, and that youre not below your mana_attack min
 var testSpellIsSet = Object.create(Test);
-testManaCheck.exe = function() {
+testSpellIsSet.exe = function() {
 	this.init();
 	window.setStats();
-	window.setCurrentHealthAndMana();-3
+	window.setCurrentHealthAndMana();
 	c = getCharacter();
 	s = getSettings();
 	this.assert(c.spell.command !== '',"Character spell value should be set");
@@ -81,23 +80,23 @@ var testManaCheckSpellCost = Object.create(Test);
 testManaCheckSpellCost.exe = function() {
 	this.init();
 	window.setStats();
-	window.setCurrentHealthAndMana();-3
+	window.setCurrentHealthAndMana();
 	c = getCharacter();
 	s = getSettings();
 
 	c.current.mana = 10;
-	c.spell.mana = 1; //11 should fail and 10 should pass
+	c.spell.mana = 10; //11 should fail and 10 should pass
 	s.mana_attack = 9;
 	result = window.mana_check();
 	this.assert(result == true,"Character should have enough mana to cast the spell");
 
 }
 
-var testManaCheckManaAttack = Object.crete(Test);
+var testManaCheckManaAttack = Object.create(Test);
 testManaCheckManaAttack.exe = function() {
 	this.init();
 	window.setStats();
-	window.setCurrentHealthAndMana();-3
+	window.setCurrentHealthAndMana();
 	c = getCharacter();
 	s = getSettings();
 
