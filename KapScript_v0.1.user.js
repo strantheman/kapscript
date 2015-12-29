@@ -12,10 +12,10 @@
 // May take inspiration from Blorgen, Chupon. At present no code taken directly from their projects.
 // Blorgen - https://github.com/flareofghast/webMUD
 // Chupon - https://github.com/AyaTheHusker/WebMUD_AIO_Script
-// props to Cabal from Multi-Comm in Las Vegas who gave me my first script ever in Qmodem Pro for MS-DOS
+// props to Cabal from Multi-Comm in Las Vegas who gave me my first script ever in Qmodem Pro for MS-DOS. I believe it was a Slums script.
 //
 
-
+//jqueryui
 /*! jQuery UI - v1.11.4 - 2015-03-11
 * http://jqueryui.com
 * Includes: core.js, widget.js, mouse.js, position.js, accordion.js, autocomplete.js, button.js, datepicker.js, dialog.js, draggable.js, droppable.js, effect.js, effect-blind.js, effect-bounce.js, effect-clip.js, effect-drop.js, effect-explode.js, effect-fade.js, effect-fold.js, effect-highlight.js, effect-puff.js, effect-pulsate.js, effect-scale.js, effect-shake.js, effect-size.js, effect-slide.js, effect-transfer.js, menu.js, progressbar.js, resizable.js, selectable.js, selectmenu.js, slider.js, sortable.js, spinner.js, tabs.js, tooltip.js
@@ -220,7 +220,7 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 // - option to reverse in real time to back-out
 // - http://forums.webmud.com/thread/deepwood-maps/
 
-//#TODO POC for a database - mongo? stored remotely?
+//#TODO POC for a database - mongo? stored remotely? this requires a separate server even if you just want mongo theres got to be a PHP middle man. js cant talk to mongo. its just like any other dbms. phart
 
 //#TODO move() should display the direction command being used, not hide it. use sendMessageText.
 // - this function will clear the #message input box, so we should make sure values that were there are replaced after executing
@@ -239,9 +239,10 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 //#TODO respond to a telepath from a 'friend' - /kap kapscript version - reseponse: /you KapScript v0.1
 //var KAPSCRIPT = KAPSCRIPT || {};
 
-//#TODO handle death = -15
-
 //#TODO create @mentions that send /telepath with the note to the mentioned user and say "In gossip:"
+
+
+//#TODO handle death = -15
 
 (function($) {
 
@@ -251,12 +252,14 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
         ,  health_run: 0.49
         ,  mana_rest: 0.20
         ,  mana_attack: 20
+        ,  death_failsafe: -10
     };
     var s = settings;
 	window.getSettings = function() {
 		return s;
 	}
 
+	// use states for character, like in combat, resting, running, inviting, joining
     var character = {
         base: {
             health: maxHP
@@ -318,6 +321,8 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 		return allowCasting;
 	}
 
+	//webmuds data structures
+	//#TODO have a test that validates the model. check that every property exists and report those that are missing
 	var model = {
 		actionData: {
 			Result: 1
@@ -330,7 +335,7 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
     var AUTO = false;
 	var version = 'KapScript v0.1.02';
 
-//: if mana less than spell cost, or less than mana_attack setting dont allow spell to be cast and start attacking with melee
+	//: if mana less than spell cost, or less than mana_attack setting dont allow spell to be cast and start attacking with melee
 	// COMBAT OVERRIDE
 	var wm_attack = window.attack;
 	window.attack = function(actionData) {
@@ -381,9 +386,27 @@ You hit kobold thief for 6!,
 <br>
 */
 
+
+	////////////////////////////////////////
+	///////////// Health and Mana //////////
+	////////////////////////////////////////
+
 	window.setCurrentHealthAndMana = function() {
         c.current.health = curHP;
         c.current.mana = curMA;
+       /*
+       	if(c.current.health <= s.death_failsafe) {
+
+	        window.location = "http://www.webmud.com";
+		}
+
+		if(c.state == 'combat_spell') {
+			// and mana_check failed, set combat to melee
+
+		}
+		*/
+		// state over of being in combat or night as well as a specific thing theyre doing
+
         //return 'Cur HP:' + c.current.health + ' Cur MP:' + c.current.mana + '\nHP %:' + c.health_percent + ' MP %:' + c.mana_percent;
         return c.current;
     }
@@ -403,10 +426,7 @@ You hit kobold thief for 6!,
 			curMA = actionData.MA;
 			resting = actionData.Resting;
 			showPrompt(true);
-			updateHPMABars();
-		};
-		*/
-	}
+			updateH
 
     function initkap() { //run once when script enabled
         AUTO = true;
