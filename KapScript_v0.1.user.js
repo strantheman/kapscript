@@ -4,7 +4,7 @@
 // @description webMud Script - http://www.webmud.com - https://github.com/strantheman/kapscript
 // @version      0.1.02
 // @author       Kap
-// @match        http://www.webmud.com/Characters/*
+// @match        http://*webmud.com/Characters/*
 // @grant       none
 // ==/UserScript==
 
@@ -204,15 +204,12 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 });
 //vein
 
-//#TODO add spell support
+//#TODO add combat spell support
 // 12/19 10:39:05 AM from Force
 // - {caster} raises a hand and utters a harsh word.
 // - Ethereal daggers speed forth and shred {target} for {value} damage!
 // - You cast heal major wounds on {target}, healing {value} damage!
 // - {caster} casts cause harm on {target} for {value} damage!
-
-//#TODO init command to check st to get max health and mana
-// TEST: script should never think its base health or base mana is -999
 
 //#TODO setup profiles so rest/run settings are different per character
 
@@ -228,6 +225,7 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 //#TODO sendMessageText() may need to be overridden or extended to allow it to smartly save and then replace what was in #message if its being executed from a script and not a person
 
 //#TODO numpad to send direction commands
+
 //#TODO detect a realm update and refresh the page. possibly wait for dom update to not come back for 2 minutes and then refresh
 
 //#TODO check room (send return) every 4 seconds
@@ -237,11 +235,24 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 //#TODO fix focus in message box whenever window is activated
 
 //#TODO respond to a telepath from a 'friend' - /kap kapscript version - reseponse: /you KapScript v0.1
-//var KAPSCRIPT = KAPSCRIPT || {};
-
-//#TODO handle death = -15
 
 //#TODO create @mentions that send /telepath with the note to the mentioned user and say "In gossip:"
+
+
+
+
+//// THIS VERSION
+
+//#TODO handle death = -15.
+
+//#TODO heal if below a certain attack heal percentage
+
+////
+
+
+
+
+//var KAPSCRIPT = KAPSCRIPT || {};
 
 (function($) {
 
@@ -249,13 +260,38 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
     var settings = {
         health_rest: 0.90
         ,  health_run: 0.49
+        ,  heal_attack: 0.99
         ,  mana_rest: 0.20
         ,  mana_attack: 20
+        ,  health_hangup: 0.20
     };
     var s = settings;
 	window.getSettings = function() {
 		return s;
 	}
+
+
+	var HealingStateHealSelf = {
+
+		name: 'HealingStateHealSelf',
+        get state_name() {
+            return this.name;
+        },
+        performHeal: function() {
+			console.log('healed ya!');
+			sendMessageText(c.healspell.command);
+			sendMessageDirect("");
+			c.state(Object.create(CastingState));
+		},
+	};
+
+	var CastingState = {
+		name: 'CastingState',
+	};
+	var IdleState = {
+		name: 'IdleState',
+	};
+
 
     var character = {
         base: {
@@ -284,8 +320,28 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 			,	round: 'You launch a volley of thorns at giant rat for 9 damage!' //#ff5555
 			,	miss: 'You attempt to cast volley of thorns, but fail.' //#00aaaa
 			,	mana: 1
-		}
-		/*
+		},
+        healspell: {
+			command: 'mihe'
+			,	round: 'You cast heal minor wounds on yourself, healing 6 damage!' //#55ffff
+			,	miss: 'You attempt to cast heal minor wounds, but fail.' //#00aaaa
+			,	mana: 1
+			,	error: 'You have already cast a spell this round!' //#ff5555
+
+        },
+        get state() {
+            return this.state
+
+        },
+        set state(state) {
+			console.log('hi');
+			this.state = state;
+		},
+        state: undefined,
+        performHeal: function() {
+			this.state.performHeal();
+		},
+
 		get mana_check() {
 			allowCasting = true;
 
@@ -298,13 +354,37 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 			}
 			return allowCasting;
 		}
-		*/
+
     };
     var c = character;
+	c.state = Object.create(IdleState);
 	window.getCharacter = function() {
 		return c;
 	}
 
+/*
+	var CombatStateAttackMelee = {
+
+		name: 'Attack Melee',
+        get state_name() {
+            return this.name;
+        },
+	};
+	var testCombatState = Object.create(CombatStateAttackMelee);
+	console.log('testCombatState: ' + testCombatState.name);
+
+	var CombatStateAttackSpell = {
+
+		name: 'Attack Spell',
+        get state_name() {
+            return this.name;
+        },
+	};
+	var testCombatState = Object.create(CombatStateAttackSpell);
+	console.log('testCombatState: ' + testCombatState.name);
+*/
+
+/* put inside the c object
 	window.mana_check = function() {
 		allowCasting = true;
 
@@ -317,7 +397,7 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 		}
 		return allowCasting;
 	}
-
+*/
 	var model = {
 		actionData: {
 			Result: 1
@@ -334,7 +414,7 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 	// COMBAT OVERRIDE
 	var wm_attack = window.attack;
 	window.attack = function(actionData) {
-		console.log(actionData);+
+		console.log(actionData);
 		console.log('check ' + c.mana_check);
 		if(c.mana_check) { // how does mana_check know which spell is being cast? maybe its not just the next attack spell
 			sendMessageText(c.spell.command + ' ' + actionData.TargetName);
@@ -357,36 +437,60 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 		*/
 	}
 
-/*
-#00aaaa
-You hit kobold thief for 6!,
+//function addMessage(message, hexColor, crlf, removeLastPrompt) {
 
-<span class="hour" style="color:#aaaaaa">vtho slime</span>
-<br>
-<span class="hour23" style="color:#996600">You move to cast volley of thorns upon mud slime!</span>
-<br>
-<span class="hour23" style="color:#996600">*Combat Engaged*</span>
-<br>
-<span class="hour23" style="color:#00aaaa">You attempt to cast volley of thorns, but fail.</span>
-<br>
-<span style="color:#ff5555" class="hour0">You launch a volley of thorns at giant rat for 9 damage!</span>
-<br>
-<span class="hour23" style="color:#aaaaaa">The mud slime melts into a puddle of goo.</span>
-<br>
-<span class="hour23" style="color:#aaaaaa">1 copper farthing drops to the ground.</span>
-<br>
-<span class="hour23" style="color:#aaaaaa">You gain 6 experience.</span>
-<br>
-<span class="hour23" style="color:#996600">*Combat Off*</span>
-<br>
-*/
+
+	//var wm_buildSpan = window.buildSpan;
+
+	/*
+	window.buildSpan = function(color, text) {
+		wm_buildSpan(color, text);
+		console.log('KAP! ' + text);
+
+	}
+	*/
 
 	window.setCurrentHealthAndMana = function() {
         c.current.health = curHP;
         c.current.mana = curMA;
+        if(c.health_percent <= s.health_failsafe) {
+            window.location = 'http://www.webmud.com';
+        }
         //return 'Cur HP:' + c.current.health + ' Cur MP:' + c.current.mana + '\nHP %:' + c.health_percent + ' MP %:' + c.mana_percent;
         return c.current;
     }
+
+/*
+			var d = new Date();
+			//document.write(d.toLocaleString());
+			//document.write("<br>");
+			console.log(d.toLocaleString() + ': heal? ' + c.health_percent + ' ' + s.heal_attack);
+*/
+
+    window.healCheck = function() {
+		// TODO check that state is																ccccccccc  not already healing before attempting to heal. heal state should complete when it receives one of the possible messages from mihe for example
+		if(c.health_percent <= s.heal_attack) {
+
+
+			if (typeof(c.state) == "object" && c.state.name == 'HealingStateHealSelf') {
+				console.log('youre in the healing state, so lets check if you need to be processed further');
+			} else if (c.state.name == 'CastingState') {
+				console.log('youre casting a spell this round waiting for a response from the server');
+			} else if (c.state.name == 'IdleState') { // anyone but healing state can come get set and heal
+				////////////
+
+				c.state(Object.create(HealingStateHealSelf));
+				c.performHeal();
+
+				console.log('performheal?');
+				// confirm heal works in observeDOM and then state is set back to IdleState
+
+			}
+		}
+
+    }
+
+
 
     window.setStats = function() {
         while(c.base.health <= 0) { // depends on WebMUD.js values being established and for some reason these are sometimes null when first called. while loop doesnt appear to take any longer so it must be a matter of ms
@@ -522,7 +626,7 @@ function breakCombat(actionData) {
 		$('#mainScreen').addClass('mainScreenWide');
 
 		// hide the rest of the remaining original UI. do not remove this from DOM as there can be important hidden input elements that live there
-		$('#divPlayers').parent().hide();
+		//$('#divPlayers').parent().hide();
 
 		/* toggle doesnt work - something here throws an error and the button disappears
 		$('#mainScreenWideToggle').toggle(function() {
@@ -590,8 +694,8 @@ function breakCombat(actionData) {
                 var obs = new MutationObserver(function(mutations, observer) {
                     if (mutations[0].addedNodes.length || mutations[0].removedNodes.length)
                         //console.log( mutations[0].addedNodes[0]);
-                        //console.log($(mutations[0].addedNodes[0]).html() );
-                        callback();
+                        //console.log( $(mutations[0].addedNodes[0]).html() );
+                        callback($(mutations[0].addedNodes[0]).html());
                 });
                 // have the observer observe foo for changes in children
                 obs.observe(obj, {childList:true, subtree:true});
@@ -607,10 +711,25 @@ function breakCombat(actionData) {
     })();
     //////
 
-    observeDOM(document.getElementById('mainScreen'), function() { // run every time the game sends data - DOM change
+    observeDOM(document.getElementById('mainScreen'), function(message) { // run every time the game sends data - DOM change
         if (AUTO) {
-            combat();
+            //combat();
+
+			if(c.state.name == 'CastingState') {
+				console.log('from callback ' + message.substring(0,10));
+
+				if(message.substring(0,38) == 'You cast heal minor wounds on yourself' || message.substring(0,38) == 'You attempt to cast heal minor wounds,') { //successful heal
+					c.state = Object.create(IdleState);
+				}
+				if(message.substring(0,41) == 'You have already cast a spell this round!') {
+					window.setTimeout(function(){c.state = Object.create(IdleState);},4000);
+				}
+
+			}
+
             setCurrentHealthAndMana();
+            healCheck();
+
             //console.log(didrun + ' health_percent:' + c.health_percent + ' health_rest:' + s.health_rest + ' health_run:' + s.health_run);
             if (didrun == true && c.health_percent >= s.health_rest) {
                 go();
@@ -619,7 +738,11 @@ function breakCombat(actionData) {
             }
         }
     });
+
+
 })(jQuery);
+
+
 
 
 //("DisableAI");
