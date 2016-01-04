@@ -4,7 +4,8 @@
 // @description webMud Script - http://www.webmud.com - https://github.com/strantheman/kapscript
 // @version      0.1.02
 // @author       Kap
-// @match        http://*webmud.com/Characters/*
+// @match        http://webmud.com/Characters/*
+// @match        http://www.webmud.com/Characters/*
 // @grant       none
 // ==/UserScript==
 
@@ -308,6 +309,7 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
         get mana_percent() {
             return round(c.current.mana/this.base.mana,2);
         },
+        token: '',
         combat: {
 			command: 'attack'
 			,	engage: ''
@@ -384,20 +386,7 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 	console.log('testCombatState: ' + testCombatState.name);
 */
 
-/* put inside the c object
-	window.mana_check = function() {
-		allowCasting = true;
 
-		if( !(c.current.mana >= c.spell.mana) ) {
-			allowCasting = false;
-		}
-
-		if( !(c.current.mana > s.mana_attack) ) {
-			allowCasting = false;
-		}
-		return allowCasting;
-	}
-*/
 	var model = {
 		actionData: {
 			Result: 1
@@ -420,35 +409,9 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 			sendMessageText(c.spell.command + ' ' + actionData.TargetName);
 		}
 		wm_attack(actionData);
-	/*
-		if (actionData.Result == -1) {
-			commandHadNoEffect();
-			return;
-		}
-		if (actionData.Result == -2) {
-			var text = buildSpan(cga_light_red, "PvP is disabled in this realm.") + "<br>";
-			addMessageRaw(text, false, true);
-			return;
-		}
-		console.log('Kaps combat now!');
-		var text = buildSpan(cga_dark_yellowHex, "*Combat Engaged**Kap**") + "<br>";
-		//todo: show current target somewhere on screen
-		addMessageRaw(text, false, true);
-		*/
-	}
-
-//function addMessage(message, hexColor, crlf, removeLastPrompt) {
-
-
-	//var wm_buildSpan = window.buildSpan;
-
-	/*
-	window.buildSpan = function(color, text) {
-		wm_buildSpan(color, text);
-		console.log('KAP! ' + text);
 
 	}
-	*/
+
 
 	window.setCurrentHealthAndMana = function() {
         c.current.health = curHP;
@@ -460,12 +423,7 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
         return c.current;
     }
 
-/*
-			var d = new Date();
-			//document.write(d.toLocaleString());
-			//document.write("<br>");
-			console.log(d.toLocaleString() + ': heal? ' + c.health_percent + ' ' + s.heal_attack);
-*/
+
 
     window.healCheck = function() {
 		// TODO check that state is																ccccccccc  not already healing before attempting to heal. heal state should complete when it receives one of the possible messages from mihe for example
@@ -497,42 +455,24 @@ this.tablist=this._getList().addClass("ui-tabs-nav ui-helper-reset ui-helper-cle
 			c.base.health = maxHP;
 			c.base.mana = maxMA;
 		}
-		//return 'Max HP:' + c.base.health + ' Max MP:' + c.base.mana;
 		return c.base;
-		/*
-		function updateHPMA(actionData) {
-			maxHP = actionData.MaxHP;
-			curHP = actionData.HP;
-			maxMA = actionData.MaxMA;
-			curMA = actionData.MA;
-			resting = actionData.Resting;
-			showPrompt(true);
-			updateHPMABars();
-		};
-		*/
 	}
 
     function initkap() { //run once when script enabled
         AUTO = true;
-        token = $('#connectionToken').val();
-        console.log('KapScript Initialized. Token: ' + token);
-        if(token !== '') { sendMessageDirect('st'); }
+        c.token = $('#connectionToken').val();
+        console.log('KapScript Initialized. Token: ' + c.token);
+        if(c.token !== '') { sendMessageDirect('st'); }
 
         // additional startup functions here
         console.log('######### initkap #########');
 
-		result = setStats();
-		//console.log('Max HP:' + result.health + ' Max MP:' + result.mana);
-
-        result = setCurrentHealthAndMana();
-        //console.log(result);
-
-
+		setStats();
+        setCurrentHealthAndMana();
     }
     function deinitkap() {
         AUTO = false;
-        token = $('#connectionToken').val();
-        console.log('KapScript Deinitialized. Token: ' + token);
+        console.log('KapScript Deinitialized. Token: ' + c.token);
 
     }
 
@@ -620,7 +560,7 @@ function breakCombat(actionData) {
 		$('#mainScreenContainer').append( $('#mainScreen') );
 		$('#messageContainer').append( $('#message').parent() );
 		//$('#kapNav .section').last().append( $('#chkEnableAI') ).append('<label for="chkEnableAI">Enable AI</label>');
-		$('#enableAIContainer').append( $('#chkEnableAI') ).append(' <label for="chkEnableAI">Enable AI</label>');
+		$('#enableAIContainer').append( $('#chkEnableAI') ).append(' <label for="chkEnableAI">Enable AI</label> <a href="/Characters/AISettings?RealmID=1&amp;PlayerID=' + c.token + '" style="color:#000" target="_blank">Settings</a>');
 
 		vein.inject('.mainScreenWide',{'width':'1170px !important','height':'500px !important','padding':'6px !important','margin':'0 0 6px 0 !important'});
 		$('#mainScreen').addClass('mainScreenWide');
@@ -715,6 +655,7 @@ function breakCombat(actionData) {
         if (AUTO) {
             //combat();
 
+			/*
 			if(c.state.name == 'CastingState') {
 				console.log('from callback ' + message.substring(0,10));
 
@@ -726,6 +667,7 @@ function breakCombat(actionData) {
 				}
 
 			}
+			*/
 
             setCurrentHealthAndMana();
             healCheck();
